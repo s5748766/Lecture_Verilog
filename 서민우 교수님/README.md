@@ -31,6 +31,7 @@ MIPI
 WiFi
 Ethernet
 PCIe
+CAN
 ```
 
 ### 3. FPGA Car Project - 5일
