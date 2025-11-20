@@ -1,0 +1,16 @@
+#
+# Edit Lock-Stake file. CAUTION: Please do not change.
+#
+# Information about current Edit Lock Owner.
+#
+LockStakeVersion               1.1
+LoginName                      student011
+HostName                       gjchamber
+ProcessIdentifier              176838
+ProcessCreationTime_UTC        1754197898
+ProcessCreationTime_Readable   Sun Aug  3 14:11:38 2025 KST
+AppIdentifier                  OA File System Design Manager
+OSType                         unix
+ReasonForPlacingEditLock       OpenAccess edit lock
+FilePathUsedToEditLock         /home/student011/gpdk090_v4.6/EMH/4BIT_SYNC_UPCOUNTER/symbol/symbol.oa.cdslck
+TimeEditLocked                 Wed Aug  6 10:25:33 2025 KST

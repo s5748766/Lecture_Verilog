@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>경계 처리 상세 데모</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+        h1, h2 {
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .demo-section {
+            margin: 30px 0;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .grid-container {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .image-grid {
+            display: inline-grid;
+            grid-template-columns: repeat(5, 50px);
+            gap: 2px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            position: relative;
+        }
+        .access-grid {
+            display: inline-grid;
+            grid-template-columns: repeat(3, 60px);
+            gap: 2px;
+            background: rgba(255, 107, 107, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            border: 3px solid #ff6b6b;
+        }
+        .pixel {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            border-radius: 5px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            position: relative;
+        }
+        .pixel.small {
+            width: 60px;
+            height: 60px;
+            font-size: 14px;
+        }
+        .pixel:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+        }
+        .pixel.center {
+            border: 3px solid #4ecdc4 !important;
+            box-shadow: 0 0 20px rgba(78, 205, 196, 0.7);
+        }
+        .pixel.requested {
+            border: 3px solid #ff9f43 !important;
+            box-shadow: 0 0 15px rgba(255, 159, 67, 0.5);
+        }
+        .pixel.actual {
+            border: 3px solid #6c5ce7 !important;
+            box-shadow: 0 0 15px rgba(108, 92, 231, 0.5);
+        }
+        .pixel.duplicate {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24) !important;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            color: white;
+            box-shadow: 0 4px 15px 0 rgba(31, 38, 135, 0.2);
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px 0 rgba(31, 38, 135, 0.4);
+        }
+        .explanation {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #4ecdc4;
+        }
+        .code-block {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        .legend {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 12px;
+            border-radius: 20px;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+        }
+        .coordinate-display {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+        .arrow {
+            font-size: 2em;
+            color: #4ecdc4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .mapping-display {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 경계 처리 (Boundary Handling) 상세 분석</h1>
+        
+        <div class="demo-section">
+            <h2>클램핑(Clamping) 방식 이해하기</h2>
+            <div class="explanation">
+                <p><strong>클램핑은 데이터를 복사하거나 보간하지 않습니다!</strong></p>
+                <p>단순히 <strong>요청된 좌표를 유효한 범위로 제한</strong>하여 기존 픽셀 값을 재사용합니다.</p>
+            </div>
+            
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #4ecdc4; border: 2px solid #4ecdc4;"></div>
+                    <span>중심 픽셀</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ff9f43; border: 2px solid #ff9f43;"></div>
+                    <span>요청된 좌표</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #6c5ce7; border: 2px solid #6c5ce7;"></div>
+                    <span>실제 접근된 픽셀</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(45deg, #ff6b6b, #ee5a24);"></div>
+                    <span>중복 사용된 픽셀</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>5×5 샘플 이미지</h2>
+            <div class="controls">
+                <button class="btn" onclick="selectPixel(0,0)">좌상단 (0,0)</button>
+                <button class="btn" onclick="selectPixel(2,2)">중앙 (2,2)</button>
+                <button class="btn" onclick="selectPixel(4,4)">우하단 (4,4)</button>
+                <button class="btn" onclick="selectPixel(0,2)">좌측 가장자리 (0,2)</button>
+                <button class="btn" onclick="selectPixel(4,0)">우상단 (4,0)</button>
+            </div>
+            
+            <div class="grid-container">
+                <div>
+                    <h3>원본 이미지 (5×5)</h3>
+                    <div class="image-grid" id="originalImage"></div>
+                </div>
+                
+                <div class="arrow">→</div>
+                
+                <div>
+                    <h3>3×3 접근 영역</h3>
+                    <div class="access-grid" id="accessGrid"></div>
+                    <p style="text-align: center; margin-top: 10px; font-size: 14px;">
+                        중심: <span id="centerCoord">클릭하여 선택</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>좌표 매핑 상세 분석</h2>
+            <div id="mappingDetails">
+                <p>위의 버튼을 클릭하여 각 위치에서의 좌표 매핑을 확인하세요.</p>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>getPixel 함수 동작 원리</h2>
+            <div class="code-block">
+unsigned char getPixel(unsigned char* image, int width, int height, int x, int y) {
+    // 좌표 클램핑 (범위 제한)
+    if (x &lt; 0) x = 0;           // 왼쪽 경계 벗어남 → 0으로 설정
+    if (x &gt;= width) x = width - 1;   // 오른쪽 경계 벗어남 → width-1로 설정  
+    if (y &lt; 0) y = 0;           // 위쪽 경계 벗어남 → 0으로 설정
+    if (y &gt;= height) y = height - 1; // 아래쪽 경계 벗어남 → height-1로 설정
+    
+    return image[y * width + x];  // 클램핑된 좌표로 픽셀 값 반환
+}
+            </div>
+            
+            <div class="explanation">
+                <h3>핵심 포인트:</h3>
+                <ul>
+                    <li><strong>데이터 복사나 보간 없음</strong> - 기존 픽셀을 재사용</li>
+                    <li><strong>경계 픽셀의 값이 여러 번 사용됨</strong> - 가장자리에서 같은 값이 반복</li>
+                    <li><strong>간단하고 효율적</strong> - 추가 메모리나 복잡한 계산 불필요</li>
+                    <li><strong>엣지 검출에 적합</strong> - 경계에서 인위적인 엣지 생성 방지</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let imageData = [];
+        let currentCenter = null;
+        const imageSize = 5;
+
+        function initializeImage() {
+            // 샘플 이미지 데이터 생성 (각 픽셀에 고유한 값)
+            imageData = [];
+            for (let y = 0; y < imageSize; y++) {
+                imageData[y] = [];
+                for (let x = 0; x < imageSize; x++) {
+                    imageData[y][x] = (y * imageSize + x + 1) * 10;
+                }
+            }
+            renderImage();
+        }
+
+        function getPixel(x, y) {
+            // 클램핑 구현
+            let clampedX = x;
+            let clampedY = y;
+            
+            if (clampedX < 0) clampedX = 0;
+            if (clampedX >= imageSize) clampedX = imageSize - 1;
+            if (clampedY < 0) clampedY = 0;
+            if (clampedY >= imageSize) clampedY = imageSize - 1;
+            
+            return {
+                value: imageData[clampedY][clampedX],
+                actualX: clampedX,
+                actualY: clampedY,
+                wasClamped: (x !== clampedX || y !== clampedY)
+            };
+        }
+
+        function renderImage() {
+            const originalGrid = document.getElementById('originalImage');
+            originalGrid.innerHTML = '';
+
+            for (let y = 0; y < imageSize; y++) {
+                for (let x = 0; x < imageSize; x++) {
+                    const pixel = document.createElement('div');
+                    pixel.className = 'pixel';
+                    const grayValue = Math.min(255, imageData[y][x]);
+                    pixel.style.backgroundColor = `rgb(${grayValue}, ${grayValue}, ${grayValue})`;
+                    pixel.style.color = grayValue > 127 ? 'black' : 'white';
+                    pixel.textContent = imageData[y][x];
+                    pixel.onclick = () => selectPixel(x, y);
+                    
+                    const coord = document.createElement('div');
+                    coord.className = 'coordinate-display';
+                    coord.textContent = `(${x},${y})`;
+                    pixel.appendChild(coord);
+                    
+                    originalGrid.appendChild(pixel);
+                }
+            }
+        }
+
+        function selectPixel(centerX, centerY) {
+            currentCenter = {x: centerX, y: centerY};
+            
+            // 원본 이미지에서 중심 픽셀 하이라이트
+            const originalPixels = document.querySelectorAll('#originalImage .pixel');
+            originalPixels.forEach((p, i) => {
+                p.classList.remove('center');
+                const x = i % imageSize;
+                const y = Math.floor(i / imageSize);
+                if (x === centerX && y === centerY) {
+                    p.classList.add('center');
+                }
+            });
+
+            // 3x3 접근 그리드 렌더링
+            renderAccessGrid(centerX, centerY);
+            
+            // 좌표 매핑 상세 분석 표시
+            showMappingDetails(centerX, centerY);
+            
+            // 중심 좌표 표시
+            document.getElementById('centerCoord').textContent = `(${centerX}, ${centerY})`;
+        }
+
+        function renderAccessGrid(centerX, centerY) {
+            const accessGrid = document.getElementById('accessGrid');
+            accessGrid.innerHTML = '';
+
+            let mappingInfo = [];
+            let duplicatePositions = new Map();
+
+            for (let i = -1; i <= 1; i++) {
+                for (let j = -1; j <= 1; j++) {
+                    const requestedX = centerX + j;
+                    const requestedY = centerY + i;
+                    const result = getPixel(requestedX, requestedY);
+                    
+                    const pixel = document.createElement('div');
+                    pixel.className = 'pixel small';
+                    
+                    const grayValue = Math.min(255, result.value);
+                    pixel.style.backgroundColor = `rgb(${grayValue}, ${grayValue}, ${grayValue})`;
+                    pixel.style.color = grayValue > 127 ? 'black' : 'white';
+                    pixel.textContent = result.value;
+                    
+                    // 클램핑 여부에 따른 스타일링
+                    if (result.wasClamped) {
+                        const key = `${result.actualX},${result.actualY}`;
+                        duplicatePositions.set(key, (duplicatePositions.get(key) || 0) + 1);
+                        
+                        if (duplicatePositions.get(key) > 1) {
+                            pixel.classList.add('duplicate');
+                        } else {
+                            pixel.classList.add('actual');
+                        }
+                    } else {
+                        pixel.classList.add('requested');
+                    }
+                    
+                    // 좌표 정보 추가
+                    const coord = document.createElement('div');
+                    coord.className = 'coordinate-display';
+                    coord.textContent = result.wasClamped ? 
+                        `(${requestedX},${requestedY})→(${result.actualX},${result.actualY})` : 
+                        `(${requestedX},${requestedY})`;
+                    pixel.appendChild(coord);
+                    
+                    accessGrid.appendChild(pixel);
+                    
+                    // 매핑 정보 저장
+                    mappingInfo.push({
+                        requested: {x: requestedX, y: requestedY},
+                        actual: {x: result.actualX, y: result.actualY},
+                        value: result.value,
+                        wasClamped: result.wasClamped
+                    });
+                }
+            }
+        }
+
+        function showMappingDetails(centerX, centerY) {
+            let html = `<h3>픽셀 (${centerX}, ${centerY})를 중심으로 한 3×3 접근 분석</h3>`;
+            
+            html += '<div class="mapping-display">';
+            html += '<strong>좌표 매핑 테이블:</strong><br>';
+            html += 'getPixel(요청_x, 요청_y) → 실제_접근_좌표 : 픽셀_값<br><br>';
+            
+            let clampedCount = 0;
+            let duplicates = new Map();
+            
+            for (let i = -1; i <= 1; i++) {
+                for (let j = -1; j <= 1; j++) {
+                    const requestedX = centerX + j;
+                    const requestedY = centerY + i;
+                    const result = getPixel(requestedX, requestedY);
+                    
+                    const actualKey = `(${result.actualX},${result.actualY})`;
+                    duplicates.set(actualKey, (duplicates.get(actualKey) || 0) + 1);
+                    
+                    if (result.wasClamped) {
+                        clampedCount++;
+                        html += `<span style="color: #ff9f43;">getPixel(${requestedX}, ${requestedY})</span> → `;
+                        html += `<span style="color: #6c5ce7;">(${result.actualX}, ${result.actualY})</span> : `;
+                        html += `<span style="color: #4ecdc4;">${result.value}</span> 🔄 클램핑됨<br>`;
+                    } else {
+                        html += `getPixel(${requestedX}, ${requestedY}) → (${result.actualX}, ${result.actualY}) : ${result.value}<br>`;
+                    }
+                }
+            }
+            
+            html += '</div>';
+            
+            html += '<div class="explanation">';
+            html += `<h4>분석 결과:</h4>`;
+            html += `<ul>`;
+            html += `<li><strong>클램핑된 좌표 수:</strong> ${clampedCount}/9</li>`;
+            
+            let duplicateInfo = [];
+            for (let [pos, count] of duplicates) {
+                if (count > 1) {
+                    duplicateInfo.push(`${pos}: ${count}번 사용`);
+                }
+            }
+            
+            if (duplicateInfo.length > 0) {
+                html += `<li><strong>중복 사용된 픽셀:</strong> ${duplicateInfo.join(', ')}</li>`;
+            } else {
+                html += `<li><strong>중복 사용된 픽셀:</strong> 없음</li>`;
+            }
+            
+            html += `</ul>`;
+            html += '</div>';
+
+            document.getElementById('mappingDetails').innerHTML = html;
+        }
+
+        // 초기화
+        initializeImage();
+        // 기본적으로 좌상단 선택
+        selectPixel(0, 0);
+    </script>
+</body>
+</html>

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>소벨 필터 엣지 검출 데모</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .demo-section {
+            margin: 30px 0;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .grid-container {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+        .pixel-grid {
+            display: inline-grid;
+            grid-template-columns: repeat(3, 40px);
+            gap: 2px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 10px;
+        }
+        .pixel-grid.large {
+            grid-template-columns: repeat(8, 30px);
+        }
+        .pixel {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            border-radius: 5px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        .pixel.large {
+            width: 30px;
+            height: 30px;
+            font-size: 10px;
+        }
+        .pixel:hover {
+            transform: scale(1.1);
+            border-color: #fff;
+        }
+        .pixel.center {
+            border: 3px solid #ff6b6b !important;
+            box-shadow: 0 0 15px rgba(255, 107, 107, 0.5);
+        }
+        .filter-grid {
+            background: rgba(255, 107, 107, 0.2);
+        }
+        .calculation-box {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #4ecdc4;
+        }
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            color: white;
+            box-shadow: 0 4px 15px 0 rgba(31, 38, 135, 0.2);
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px 0 rgba(31, 38, 135, 0.4);
+        }
+        .result-display {
+            font-size: 1.2em;
+            text-align: center;
+            padding: 15px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+        .step-by-step {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+        .formula {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            border-left: 4px solid #4ecdc4;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 소벨 필터 엣지 검출 데모</h1>
+        
+        <div class="demo-section">
+            <h2>1. 소벨 필터 커널</h2>
+            <div class="grid-container">
+                <div>
+                    <h3>Sobel X (세로 엣지 검출)</h3>
+                    <div class="pixel-grid filter-grid" id="sobelX">
+                        <div class="pixel">-1</div><div class="pixel">0</div><div class="pixel">1</div>
+                        <div class="pixel">-2</div><div class="pixel">0</div><div class="pixel">2</div>
+                        <div class="pixel">-1</div><div class="pixel">0</div><div class="pixel">1</div>
+                    </div>
+                </div>
+                <div>
+                    <h3>Sobel Y (가로 엣지 검출)</h3>
+                    <div class="pixel-grid filter-grid" id="sobelY">
+                        <div class="pixel">-1</div><div class="pixel">-2</div><div class="pixel">-1</div>
+                        <div class="pixel">0</div><div class="pixel">0</div><div class="pixel">0</div>
+                        <div class="pixel">1</div><div class="pixel">2</div><div class="pixel">1</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>2. 샘플 이미지와 엣지 검출 과정</h2>
+            <div class="controls">
+                <button class="btn" onclick="generateRandomImage()">랜덤 이미지 생성</button>
+                <button class="btn" onclick="generateEdgePattern()">엣지 패턴 생성</button>
+                <button class="btn" onclick="applyManualFilter()">필터 적용</button>
+                <button class="btn" onclick="animateProcess()">과정 애니메이션</button>
+            </div>
+            
+            <div class="grid-container">
+                <div>
+                    <h3>원본 이미지 (8×8)</h3>
+                    <div class="pixel-grid large" id="originalImage"></div>
+                </div>
+                <div>
+                    <h3>엣지 검출 결과</h3>
+                    <div class="pixel-grid large" id="edgeResult"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>3. 특정 픽셀에서의 계산 과정</h2>
+            <p>이미지의 픽셀을 클릭하면 해당 위치에서의 소벨 필터 계산 과정을 보여줍니다.</p>
+            
+            <div id="calculationDetails" class="step-by-step">
+                <p>이미지의 픽셀을 클릭하여 계산 과정을 확인하세요.</p>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>4. 경계 처리 (Boundary Handling)</h2>
+            <div id="boundaryDemo">
+                <p>이미지 가장자리 픽셀을 클릭하면 경계 처리 방법을 확인할 수 있습니다.</p>
+                <div class="formula">
+                    <strong>getPixel 함수의 클램핑:</strong><br>
+                    if (x &lt; 0) x = 0;<br>
+                    if (x &gt;= width) x = width - 1;<br>
+                    if (y &lt; 0) y = 0;<br>
+                    if (y &gt;= height) y = height - 1;
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let imageData = [];
+        let edgeData = [];
+        const imageSize = 8;
+
+        // 소벨 필터 정의
+        const sobelX = [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]];
+        const sobelY = [[-1, -2, -1], [0, 0, 0], [1, 2, 1]];
+
+        function initializeImage() {
+            imageData = Array(imageSize).fill().map(() => Array(imageSize).fill(128));
+            edgeData = Array(imageSize).fill().map(() => Array(imageSize).fill(0));
+            renderImage();
+        }
+
+        function getPixel(x, y) {
+            // 경계 처리 (클램핑)
+            if (x < 0) x = 0;
+            if (x >= imageSize) x = imageSize - 1;
+            if (y < 0) y = 0;
+            if (y >= imageSize) y = imageSize - 1;
+            return imageData[y][x];
+        }
+
+        function renderImage() {
+            const originalGrid = document.getElementById('originalImage');
+            const edgeGrid = document.getElementById('edgeResult');
+            
+            originalGrid.innerHTML = '';
+            edgeGrid.innerHTML = '';
+
+            for (let y = 0; y < imageSize; y++) {
+                for (let x = 0; x < imageSize; x++) {
+                    // 원본 이미지
+                    const originalPixel = document.createElement('div');
+                    originalPixel.className = 'pixel large';
+                    originalPixel.style.backgroundColor = `rgb(${imageData[y][x]}, ${imageData[y][x]}, ${imageData[y][x]})`;
+                    originalPixel.style.color = imageData[y][x] > 127 ? 'black' : 'white';
+                    originalPixel.textContent = imageData[y][x];
+                    originalPixel.onclick = () => showCalculation(x, y);
+                    originalGrid.appendChild(originalPixel);
+
+                    // 엣지 결과
+                    const edgePixel = document.createElement('div');
+                    edgePixel.className = 'pixel large';
+                    edgePixel.style.backgroundColor = `rgb(${edgeData[y][x]}, ${edgeData[y][x]}, ${edgeData[y][x]})`;
+                    edgePixel.style.color = edgeData[y][x] > 127 ? 'black' : 'white';
+                    edgePixel.textContent = edgeData[y][x];
+                    edgeGrid.appendChild(edgePixel);
+                }
+            }
+        }
+
+        function generateRandomImage() {
+            for (let y = 0; y < imageSize; y++) {
+                for (let x = 0; x < imageSize; x++) {
+                    imageData[y][x] = Math.floor(Math.random() * 256);
+                }
+            }
+            applyManualFilter();
+        }
+
+        function generateEdgePattern() {
+            // 세로 엣지 패턴 생성
+            for (let y = 0; y < imageSize; y++) {
+                for (let x = 0; x < imageSize; x++) {
+                    if (x < imageSize / 2) {
+                        imageData[y][x] = 50;
+                    } else {
+                        imageData[y][x] = 200;
+                    }
+                }
+            }
+            applyManualFilter();
+        }
+
+        function applyManualFilter() {
+            for (let y = 0; y < imageSize; y++) {
+                for (let x = 0; x < imageSize; x++) {
+                    let gx = 0, gy = 0;
+                    
+                    // 3x3 필터 적용
+                    for (let i = -1; i <= 1; i++) {
+                        for (let j = -1; j <= 1; j++) {
+                            const pixel = getPixel(x + j, y + i);
+                            gx += pixel * sobelX[i + 1][j + 1];
+                            gy += pixel * sobelY[i + 1][j + 1];
+                        }
+                    }
+                    
+                    // 엣지 강도 계산
+                    const edge = Math.min(255, Math.floor(Math.sqrt(gx * gx + gy * gy)));
+                    edgeData[y][x] = edge;
+                }
+            }
+            renderImage();
+        }
+
+        function showCalculation(centerX, centerY) {
+            let gx = 0, gy = 0;
+            let calculationHTML = `<h3>픽셀 (${centerX}, ${centerY})에서의 소벨 필터 계산</h3>`;
+            
+            calculationHTML += '<div class="calculation-box">';
+            calculationHTML += '<h4>1. 주변 3×3 픽셀 값 추출 (경계 처리 포함)</h4>';
+            calculationHTML += '<div style="display: flex; gap: 20px; align-items: center;">';
+            
+            // 3x3 그리드 표시
+            calculationHTML += '<div class="pixel-grid">';
+            for (let i = -1; i <= 1; i++) {
+                for (let j = -1; j <= 1; j++) {
+                    const pixelValue = getPixel(centerX + j, centerY + i);
+                    const actualX = Math.max(0, Math.min(imageSize - 1, centerX + j));
+                    const actualY = Math.max(0, Math.min(imageSize - 1, centerY + i));
+                    const isCenter = i === 0 && j === 0;
+                    const isClamped = (centerX + j !== actualX) || (centerY + i !== actualY);
+                    
+                    calculationHTML += `<div class="pixel ${isCenter ? 'center' : ''}" 
+                        style="background-color: rgb(${pixelValue}, ${pixelValue}, ${pixelValue}); 
+                               color: ${pixelValue > 127 ? 'black' : 'white'};
+                               ${isClamped ? 'border: 2px solid orange;' : ''}"
+                        title="${isClamped ? 'Clamped from (' + (centerX + j) + ', ' + (centerY + i) + ')' : ''}">
+                        ${pixelValue}
+                    </div>`;
+                }
+            }
+            calculationHTML += '</div>';
+            calculationHTML += '</div>';
+            calculationHTML += '</div>';
+
+            // X 방향 계산
+            calculationHTML += '<div class="calculation-box">';
+            calculationHTML += '<h4>2. Sobel X 필터 적용 (세로 엣지 검출)</h4>';
+            calculationHTML += '<div class="formula">Gx = ';
+            let gxCalculation = [];
+            for (let i = -1; i <= 1; i++) {
+                for (let j = -1; j <= 1; j++) {
+                    const pixelValue = getPixel(centerX + j, centerY + i);
+                    const filterValue = sobelX[i + 1][j + 1];
+                    if (filterValue !== 0) {
+                        gxCalculation.push(`${pixelValue} × ${filterValue}`);
+                        gx += pixelValue * filterValue;
+                    }
+                }
+            }
+            calculationHTML += gxCalculation.join(' + ') + ` = ${gx}</div>`;
+            calculationHTML += '</div>';
+
+            // Y 방향 계산
+            calculationHTML += '<div class="calculation-box">';
+            calculationHTML += '<h4>3. Sobel Y 필터 적용 (가로 엣지 검출)</h4>';
+            calculationHTML += '<div class="formula">Gy = ';
+            let gyCalculation = [];
+            for (let i = -1; i <= 1; i++) {
+                for (let j = -1; j <= 1; j++) {
+                    const pixelValue = getPixel(centerX + j, centerY + i);
+                    const filterValue = sobelY[i + 1][j + 1];
+                    if (filterValue !== 0) {
+                        gyCalculation.push(`${pixelValue} × ${filterValue}`);
+                        gy += pixelValue * filterValue;
+                    }
+                }
+            }
+            calculationHTML += gyCalculation.join(' + ') + ` = ${gy}</div>`;
+            calculationHTML += '</div>';
+
+            // 최종 결과
+            const edge = Math.min(255, Math.floor(Math.sqrt(gx * gx + gy * gy)));
+            calculationHTML += '<div class="calculation-box">';
+            calculationHTML += '<h4>4. 최종 엣지 강도 계산</h4>';
+            calculationHTML += `<div class="formula">엣지 강도 = √(Gx² + Gy²) = √(${gx}² + ${gy}²) = √${gx*gx + gy*gy} = ${edge}</div>`;
+            calculationHTML += `<div class="result-display">최종 엣지 값: ${edge}</div>`;
+            calculationHTML += '</div>';
+
+            document.getElementById('calculationDetails').innerHTML = calculationHTML;
+        }
+
+        function animateProcess() {
+            const pixels = document.querySelectorAll('#originalImage .pixel');
+            let index = 0;
+            
+            function processNext() {
+                if (index < pixels.length) {
+                    const x = index % imageSize;
+                    const y = Math.floor(index / imageSize);
+                    
+                    // 현재 픽셀 하이라이트
+                    pixels.forEach(p => p.classList.remove('center'));
+                    pixels[index].classList.add('center');
+                    
+                    // 계산 표시
+                    showCalculation(x, y);
+                    
+                    index++;
+                    setTimeout(processNext, 1000);
+                } else {
+                    pixels.forEach(p => p.classList.remove('center'));
+                }
+            }
+            
+            processNext();
+        }
+
+        // 초기화
+        initializeImage();
+        generateEdgePattern();
+    </script>
+</body>
+</html>

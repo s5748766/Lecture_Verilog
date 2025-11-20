@@ -1,0 +1,3 @@
+0 car
+1 airplane
+2 ship
