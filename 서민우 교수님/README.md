@@ -11,11 +11,11 @@ FSM-while문,switch문
 ```
 |회사|AMD|인텔|
 |----------|----------|----------|
-|ADD|ADD||
+|ADD|ADD|test1|
 |LD(LOAD)|MOV|IN|
 |ST(STORE)|MOV|OUT|
-|BR(브랜치)|CALL||
-|BL(브랜치 링크)|JUMP||
+|BR(브랜치)|CALL|test1|
+|BL(브랜치 링크)|JUMP|test1|
 ```
 
 ### 2. Peripheral 설계 - 5일
