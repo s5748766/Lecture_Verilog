@@ -11,7 +11,7 @@ FSM-while문,switch문
 ```
 |회사|AMD|인텔|
 |----------|----------|----------|
-|ADD|ADD|
+|ADD|ADD||
 |LD(LOAD)|MOV|IN|
 |ST(STORE)|MOV|OUT|
 |BR(브랜치)|CALL||
