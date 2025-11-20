@@ -8,7 +8,7 @@ FSM-while문,switch문
 ```
 
 ### ARM 명령어
-```
+
 |회사|AMD|인텔|
 |----------|----------|----------|
 |ADD|ADD|test1|
@@ -16,7 +16,6 @@ FSM-while문,switch문
 |ST(STORE)|MOV|OUT|
 |BR(브랜치)|CALL|test1|
 |BL(브랜치 링크)|JUMP|test1|
-```
 
 ### 2. Peripheral 설계 - 5일
 ```
