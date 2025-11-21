@@ -7,16 +7,6 @@ counter-for문
 FSM-while문,switch문
 ```
 
-### ARM 명령어
-
-|회사|AMD|
-|----------|----------|
-|ADD|ADD|
-|LD(LOAD)|MOV|
-|ST(STORE)|MOV|
-|BR(브랜치)|CALL|
-|BL(브랜치 링크)|JUMP|
-
 ### 2. Peripheral 설계 - 5일
 ```
 # 수업 진행
